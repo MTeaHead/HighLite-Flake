@@ -36,9 +36,6 @@
       };
 
     defaultPackage.x86_64-linux = self.packages.x86_64-linux.highlite;
-  };
-
-    defaultPackage.x86_64-linux = self.packages.x86_64-linux.highlite;
 
     apps.x86_64-linux.update = {
       type = "app";

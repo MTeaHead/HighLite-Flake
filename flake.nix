@@ -6,24 +6,37 @@
   };
 
   outputs = { self, nixpkgs }: {
-    packages.x86_64-linux.highlite = 
+    packages.x86_64-linux.highlite =
       let
         version = "1.4.1";
+        pkgs = nixpkgs.legacyPackages.x86_64-linux;
       in
-      with nixpkgs.legacyPackages.x86_64-linux; appimageTools.wrapType2 {
+      pkgs.stdenv.mkDerivation {
         pname = "highlite";
         inherit version;
-        src = fetchurl {
+        src = pkgs.fetchurl {
           url = "https://github.com/Highl1te/HighliteDesktop/releases/download/v${version}/HighLite-${version}.AppImage";
           sha256 = "08fhpjrs9skv1vsnvyilfzss2m01qmqwh6dzqjmhdnv22h30bimm";
         };
-        meta = with lib; {
+        nativeBuildInputs = [ pkgs.makeWrapper ];
+        unpackPhase = "true";
+        installPhase = ''
+          mkdir -p $out/bin $out/share/highlite
+          cp $src $out/share/highlite/HighLite-${version}.AppImage
+          chmod +x $out/share/highlite/HighLite-${version}.AppImage
+          makeWrapper ${pkgs.appimage-run}/bin/appimage-run $out/bin/highlite \
+            --add-flags "$out/share/highlite/HighLite-${version}.AppImage"
+        '';
+        meta = with pkgs.lib; {
           description = "HighLite Desktop Application";
           homepage = "https://github.com/Highl1te/HighliteDesktop";
           license = licenses.gpl3;
           maintainers = with maintainers; [ Ashes ];
         };
       };
+
+    defaultPackage.x86_64-linux = self.packages.x86_64-linux.highlite;
+  };
 
     defaultPackage.x86_64-linux = self.packages.x86_64-linux.highlite;
 

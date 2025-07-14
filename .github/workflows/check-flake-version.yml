@@ -1,53 +1,46 @@
-name: Check and Update flake.nix AppImage Version
+name: Update flake.nix to latest AppImage version
 
 on:
   schedule:
-    - cron: '0 */12 * * *'
+    - cron: '0 0 * * *'  # Every day at midnight UTC
   workflow_dispatch:
 
 jobs:
-  check-flake-version:
+  update-flake:
     runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/cachix/devenv:latest
+
     steps:
-      - uses: actions/checkout@v3
+      - name: Check out repository
+        uses: actions/checkout@v4
 
-      - name: Get latest release version from GitHub
-        id: get_latest_version
+      - name: Fetch latest release tag of Highl1te/HighliteDesktop
+        id: get_release
         run: |
-          nix shell nixpkgs#jq nixpkgs#curl -c '
-            LATEST=$(curl -s https://api.github.com/repos/Highl1te/HighliteDesktop/releases/latest | jq -r .tag_name)
-            VERSION=${LATEST#v}
-            echo "VERSION=$VERSION" >> $GITHUB_ENV
-          '
+          RELEASE_TAG=$(curl -s https://api.github.com/repos/Highl1te/HighliteDesktop/releases/latest | jq -r .tag_name)
+          VERSION=${RELEASE_TAG#v}
+          echo "RELEASE_TAG=$RELEASE_TAG" >> $GITHUB_ENV
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
 
-      - name: Check flake.nix for correct version
-        id: check_version
-        run: |
-          if grep -q "version = \"${VERSION}\";" flake.nix; then
-            echo "Up to date"
-            echo "needs_update=false" >> $GITHUB_ENV
-          else
-            echo "flake.nix does not reference the current AppImage version: $VERSION"
-            echo "needs_update=true" >> $GITHUB_ENV
-          fi
-
-      - name: Update flake.nix with new version and sha256
-        if: env.needs_update == 'true'
+      - name: Get new sha256 for AppImage
+        id: get_sha
         run: |
           URL="https://github.com/Highl1te/HighliteDesktop/releases/download/v${VERSION}/HighLite-${VERSION}.AppImage"
-          nix shell nixpkgs#nix-prefetch-url nixpkgs#gnused -c '
-            SHA256=$(nix-prefetch-url --type sha256 "$URL")
-            sed -i "s/version = \".*\";/version = \"${VERSION}\";/" flake.nix
-            sed -i "s|sha256 = \".*\";|sha256 = \"${SHA256}\";|" flake.nix
-          '
+          SHA256=$(nix-prefetch-url --type sha256 "$URL")
+          echo "SHA256=$SHA256" >> $GITHUB_ENV
 
-      - name: Commit and push changes
-        if: env.needs_update == 'true'
+      - name: Update flake.nix with new version and sha256
+        run: |
+          sed -i 's/version = ".*";/version = "'${VERSION}'";/' flake.nix
+          sed -i 's|sha256 = ".*";|sha256 = "'${SHA256}'";|' flake.nix
+
+      - name: Commit changes
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add flake.nix
-          git commit -m "chore: update flake.nix to AppImage version ${VERSION}"
-          git push
+          git commit -m "Update flake.nix to AppImage version $VERSION" || echo "No changes to commit"
+
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}

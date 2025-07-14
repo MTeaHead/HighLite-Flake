@@ -13,32 +13,18 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Fetch latest release tag of Highl1te/HighliteDesktop
-        id: get_release
-        run: |
-          RELEASE_TAG=$(curl -s https://api.github.com/repos/Highl1te/HighliteDesktop/releases/latest | jq -r .tag_name)
-          VERSION=${RELEASE_TAG#v}
-          echo "RELEASE_TAG=$RELEASE_TAG" >> $GITHUB_ENV
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
 
-      - name: Get new sha256 for AppImage
-        id: get_sha
-        run: |
-          URL="https://github.com/Highl1te/HighliteDesktop/releases/download/v${VERSION}/HighLite-${VERSION}.AppImage"
-          SHA256=$(nix-prefetch-url --type sha256 "$URL")
-          echo "SHA256=$SHA256" >> $GITHUB_ENV
-
-      - name: Update flake.nix with new version and sha256
-        run: |
-          sed -i 's/version = ".*";/version = "'${VERSION}'";/' flake.nix
-          sed -i 's|sha256 = ".*";|sha256 = "'${SHA256}'";|' flake.nix
+      - name: Run flake update app
+        run: nix run .#update
 
       - name: Commit changes
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add flake.nix
-          git commit -m "Update flake.nix to AppImage version $VERSION" || echo "No changes to commit"
+          git commit -m "Update flake.nix to latest AppImage version" || echo "No changes to commit"
 
       - name: Push changes
         uses: ad-m/github-push-action@master

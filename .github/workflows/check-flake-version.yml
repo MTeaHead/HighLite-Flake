@@ -13,43 +13,41 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Install tools
-        run: nix-env -iA nixpkgs.jq nixpkgs.gnused nixpkgs.curl
-
       - name: Get latest release version from GitHub
         id: get_latest_version
         run: |
-          LATEST=$(curl -s https://api.github.com/repos/Highl1te/HighliteDesktop/releases/latest | jq -r .tag_name)
-          VERSION=${LATEST#v}
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          nix shell nixpkgs#jq nixpkgs#curl -c '
+            LATEST=$(curl -s https://api.github.com/repos/Highl1te/HighliteDesktop/releases/latest | jq -r .tag_name)
+            VERSION=${LATEST#v}
+            echo "VERSION=$VERSION" >> $GITHUB_ENV
+          '
 
       - name: Check flake.nix for correct version
         id: check_version
         run: |
-          VERSION="${{ steps.get_latest_version.outputs.version }}"
           if grep -q "version = \"${VERSION}\";" flake.nix; then
             echo "Up to date"
-            echo "needs_update=false" >> $GITHUB_OUTPUT
+            echo "needs_update=false" >> $GITHUB_ENV
           else
             echo "flake.nix does not reference the current AppImage version: $VERSION"
-            echo "needs_update=true" >> $GITHUB_OUTPUT
+            echo "needs_update=true" >> $GITHUB_ENV
           fi
 
       - name: Update flake.nix with new version and sha256
-        if: steps.check_version.outputs.needs_update == 'true'
+        if: env.needs_update == 'true'
         run: |
-          VERSION="${{ steps.get_latest_version.outputs.version }}"
           URL="https://github.com/Highl1te/HighliteDesktop/releases/download/v${VERSION}/HighLite-${VERSION}.AppImage"
-          SHA256=$(nix-prefetch-url --type sha256 "$URL")
-          sed -i "s/version = \".*\";/version = \"${VERSION}\";/" flake.nix
-          sed -i "s|sha256 = \".*\";|sha256 = \"${SHA256}\";|" flake.nix
+          nix shell nixpkgs#nix-prefetch-url nixpkgs#gnused -c '
+            SHA256=$(nix-prefetch-url --type sha256 "$URL")
+            sed -i "s/version = \".*\";/version = \"${VERSION}\";/" flake.nix
+            sed -i "s|sha256 = \".*\";|sha256 = \"${SHA256}\";|" flake.nix
+          '
 
-      # Optional: Commit and push the change (works only for branches in your repo, not forks)
       - name: Commit and push changes
-        if: steps.check_version.outputs.needs_update == 'true'
+        if: env.needs_update == 'true'
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add flake.nix
-          git commit -m "chore: update flake.nix to AppImage version ${{ steps.get_latest_version.outputs.version }}"
+          git commit -m "chore: update flake.nix to AppImage version ${VERSION}"
           git push

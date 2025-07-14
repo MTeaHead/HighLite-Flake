@@ -9,7 +9,7 @@ jobs:
   check-flake-version:
     runs-on: ubuntu-latest
     container:
-      image: cachix/nix-action:latest
+      image: ghcr.io/cachix/devenv:latest
     steps:
       - uses: actions/checkout@v3
 

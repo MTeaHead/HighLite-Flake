@@ -9,7 +9,7 @@ jobs:
   check-flake-version:
     runs-on: ubuntu-latest
     container:
-      image: nixos/nix  # <-- This line makes it work with act!
+      image: cachix/nix-action:latest
     steps:
       - uses: actions/checkout@v3
 

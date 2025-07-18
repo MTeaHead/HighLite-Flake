@@ -8,7 +8,7 @@
   outputs = { self, nixpkgs }: {
     packages.x86_64-linux.highlite =
       let
-        version = "1.4.1";
+        version = "1.4.2";
         pkgs = nixpkgs.legacyPackages.x86_64-linux;
       in
       pkgs.stdenv.mkDerivation {
@@ -16,7 +16,7 @@
         inherit version;
         src = pkgs.fetchurl {
           url = "https://github.com/Highl1te/HighliteDesktop/releases/download/v${version}/HighLite-${version}.AppImage";
-          sha256 = "08fhpjrs9skv1vsnvyilfzss2m01qmqwh6dzqjmhdnv22h30bimm";
+          sha256 = "16yhb9jdygsab51kyg1fq8r3x33g2jn51w5699pgz7jyixgxysya";
         };
         nativeBuildInputs = [ pkgs.makeWrapper ];
         unpackPhase = "true";

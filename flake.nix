@@ -57,8 +57,23 @@
       '');
     };
 
-    devShells.x86_64-linux.default = nixpkgs.legacyPackages.x86_64-linux.mkShell {
-      buildInputs = with nixpkgs.legacyPackages.x86_64-linux; [ curl jq nix-prefetch-url ];
+    devShells.default = pkgs.mkShell {
+      buildInputs = with pkgs; [ curl jq nix-prefetch ];
+    };
+
+    devShells.impure-latest = pkgs.mkShell {
+      buildInputs = with pkgs; [ git corepack electron yarn ];
+      shellHook = ''
+        echo "\nWelcome to the impure HighLite dev shell!"
+        echo "This shell is for building the latest HighLiteDesktop from a live git clone."
+        echo "Run the following commands:"
+        echo "  git clone https://github.com/Highl1te/HighliteDesktop.git"
+        echo "  cd HighliteDesktop"
+        echo "  yarn install"
+        echo "  yarn build"
+        echo "  yarn exec electron-builder"
+        echo "AppImages will be in dist/"
+      '';
     };
   };
 }

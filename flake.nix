@@ -70,7 +70,7 @@ EOF
 
           # Update flake.nix in place
           sed -i "s/version = \".*\";/version = \"$VERSION\";/" flake.nix
-          sed -i "s|sha256 = \".*\";|sha256 = \"$SHA256\";|" flake.nix
+          sed -i "/HighLite-.*\.AppImage/{n;s|sha256 = \".*\";|sha256 = \"$SHA256\";|;}" flake.nix
 
           echo "flake.nix updated to version $VERSION with sha256 $SHA256"
         '');

@@ -11,7 +11,7 @@
       version = "1.4.3";
       icon = pkgs.fetchurl {
         url = "https://raw.githubusercontent.com/Highl1te/HighliteDesktop/main/build/icon.png";
-        sha256 = "0imbsn2s0h4k5b7a3z8rzhnzhxckm571lz52xyjrwbrqiv2406nw"; 
+        sha256 = "05fl6h8w702cjkz3d4fxq991k6hmgcxkflxv5xh4ppvy85fasycs"; 
       };
     in
     {
